@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
+FRONTEND_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', 'frontend'))
 load_dotenv(ENV_PATH, override=True)
 
 logging.basicConfig(level=logging.INFO)
@@ -26,8 +27,8 @@ from routes import routes
 
 app = Flask(
     __name__,
-    template_folder="../frontend",
-    static_folder="../frontend",
+    template_folder=FRONTEND_DIR,
+    static_folder=FRONTEND_DIR,
     static_url_path=""
 )
 
@@ -39,8 +40,9 @@ app.register_blueprint(routes)
 
 @app.route("/")
 def home():
-    return send_from_directory("../frontend", "index.html")
+    return send_from_directory(FRONTEND_DIR, "index.html")
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, debug=False)

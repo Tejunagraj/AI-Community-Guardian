@@ -1,6 +1,7 @@
 Flask
-Flask-Cors
+flask-cors
 python-dotenv
 Pillow
 requests
 groq
+gunicorn
