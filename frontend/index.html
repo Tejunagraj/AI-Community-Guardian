@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI Community Guardian - Report civic issues and get emergency help">
+    <meta name="theme-color" content="#0066ff">
+    <title>AI Community Guardian - Smart Communities, Better Living</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🛡️</text></svg>">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <span class="brand-icon">🛡️</span>
+                <h1 class="brand-name">Community Guardian</h1>
+            </div>
+            <div class="nav-menu">
+                <a href="#chat" class="nav-link">💬 Chat</a>
+                <a href="#analyzer" class="nav-link">📸 Analyze</a>
+                <a href="#services" class="nav-link">🚨 Emergency</a>
+                <a href="#help" class="nav-link">☎️ Help</a>
+                <span id="userLabel" class="nav-label"
+                    style="display:none;margin-right:12px;color:#fff;font-weight:600;"></span>
+                <select id="languageSelector" class="nav-select" onchange="switchLanguage(this.value)">
+                    <option value="en">EN</option>
+                    <option value="hi">HI</option>
+                    <option value="kn">KN</option>
+                </select>
+                <button id="themeToggleBtn" class="btn btn-secondary" onclick="toggleTheme()">🌗 Theme</button>
+                <button id="loginBtn" class="btn btn-secondary" onclick="openAuthModal()">🔐 Login</button>
+                <button id="logoutBtn" class="btn btn-secondary" style="display:none;" onclick="logout()">🚪
+                    Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <h2 class="hero-title">AI Community Guardian</h2>
+            <p class="hero-subtitle">Smart Solutions for Safer Communities</p>
+            <p class="hero-description">Report civic issues, get AI-powered analysis, and access emergency support with
+                a single platform</p>
+            <div class="hero-buttons">
+                <button class="btn btn-primary" onclick="scrollToSection('analyzer')">🎯 Report Issue</button>
+                <button class="btn btn-secondary" onclick="scrollToSection('chat')">💬 Chat with AI</button>
+            </div>
+        </div>
+        <div class="hero-background"></div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container main-content">
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section">
+            <div class="section-header">
+                <h2>📊 Community Dashboard</h2>
+                <p>Live complaint analytics, priority tracking, and health metrics</p>
+            </div>
+            <div class="dashboard-grid">
+                <div class="dashboard-card" id="totalComplaintsCard">
+                    <div class="dashboard-card-title">Total Complaints</div>
+                    <div class="dashboard-card-value" id="totalComplaints">0</div>
+                </div>
+                <div class="dashboard-card" id="criticalComplaintsCard">
+                    <div class="dashboard-card-title">Critical Complaints</div>
+                    <div class="dashboard-card-value" id="criticalComplaints">0</div>
+                </div>
+                <div class="dashboard-card" id="pendingComplaintsCard">
+                    <div class="dashboard-card-title">Pending Complaints</div>
+                    <div class="dashboard-card-value" id="pendingComplaints">0</div>
+                </div>
+                <div class="dashboard-card" id="resolvedComplaintsCard">
+                    <div class="dashboard-card-title">Resolved Complaints</div>
+                    <div class="dashboard-card-value" id="resolvedComplaints">0</div>
+                </div>
+            </div>
+            <div class="chart-card">
+                <canvas id="complaintChart"></canvas>
+            </div>
+        </section>
+
+        <!-- AI Chat Assistant Section -->
+        <section id="chat" class="section">
+            <div class="section-header">
+                <h2>💬 AI Chat Assistant</h2>
+                <p>Ask questions about community issues, safety tips, and emergency procedures</p>
+            </div>
+            <div class="glass-card chat-container">
+                <div class="chat-box">
+                    <div id="chatHistory" class="chat-history">
+                        <div class="chat-message bot-message">
+                            <div class="message-content">
+                                <strong>Community Guardian:</strong> Hello! 👋 I'm your AI Community Guardian Assistant.
+                                I'm here to help you with community issues, emergency information, and safety concerns.
+                                What can I help you with today?
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" class="chat-input"
+                        placeholder="Ask me anything... (e.g., 'How do I report a pothole?')"
+                        onkeypress="handleChatKeypress(event)">
+                    <button id="voiceBtn" class="btn btn-secondary" onclick="startVoiceInput()"
+                        title="Speak your question">🎙️</button>
+                    <button id="chatSendBtn" class="btn-chat-send" onclick="sendChatMessage()" title="Send message">
+                        <span>📤</span>
+                    </button>
+                </div>
+                <div id="chatError" class="error-message" style="display: none;"></div>
+            </div>
+        </section>
+
+        <!-- Image Analyzer Section -->
+        <section id="analyzer" class="section">
+            <div class="section-header">
+                <h2>📸 Image Analyzer</h2>
+                <p>Upload an image of a civic issue for AI-powered detection and analysis</p>
+            </div>
+            <div class="glass-card">
+                <div class="analyzer-container">
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('imageInput').click()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">
+                            <h3>Click to upload or drag image here</h3>
+                            <p>Supported formats: PNG, JPG, JPEG, GIF, WebP</p>
+                            <p>Maximum file size: 10MB</p>
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;"
+                            onchange="handleImageUpload(event)">
+                    </div>
+
+                    <!-- Image Preview -->
+                    <div id="imagePreview" class="image-preview" style="display: none;">
+                        <img id="previewImage" src="" alt="Preview">
+                        <button class="btn-remove-image" onclick="removeImage()">✕ Remove</button>
+                    </div>
+
+                    <!-- Analysis Results -->
+                    <div id="analysisResults" class="analysis-results" style="display: none;">
+                        <h3>🔍 Analysis Results</h3>
+                        <div id="analysisContent" class="analysis-content"></div>
+                    </div>
+
+                    <!-- Analyze Button -->
+                    <button id="analyzeBtn" class="btn btn-primary full-width" onclick="analyzeImage()"
+                        style="display: none;">
+                        🔍 Analyze Image
+                    </button>
+
+                    <!-- Loading State -->
+                    <div id="analysisLoading" class="loading-spinner" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Analyzing image with AI...</p>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="analyzerError" class="error-message" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="glass-card" style="margin-top:20px;">
+                <h3>📝 Quick Complaint</h3>
+                <p>Submit a civic complaint with duplicate checks and AI-powered warnings.</p>
+                <div class="complaint-controls"
+                    style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-top:12px;">
+                    <input id="complaintIssueType" placeholder="Issue type" />
+                    <select id="complaintSeverity">
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                    <select id="complaintPriority">
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                    <input id="complaintDepartment" placeholder="Department" />
+                    <input id="complaintLocation" placeholder="Location" />
+                    <input id="complaintImage" type="file" accept="image/*" />
+                </div>
+                <textarea id="complaintDescription" rows="4"
+                    style="width:100%;margin-top:10px;padding:12px;border-radius:10px;"
+                    placeholder="Describe the issue"></textarea>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+                    <button class="btn btn-primary" onclick="submitQuickComplaint()">📤 Submit Complaint</button>
+                    <button class="btn btn-secondary" onclick="startVoiceInput()">🎙️ Fill with Voice</button>
+                </div>
+                <div id="complaintFormError" class="error-message" style="display:none;margin-top:10px;"></div>
+            </div>
+
+            <!-- Generate Report Section -->
+            <div id="reportSection" class="glass-card report-section" style="display: none; margin-top: 20px;">
+                <h3>📋 Generate Complaint Report</h3>
+                <p>Create a professional complaint report based on the analysis</p>
+                <button class="btn btn-primary full-width" onclick="generateReport()">
+                    📝 Generate Report
+                </button>
+
+                <!-- Report Output -->
+                <div id="reportOutput" class="report-output" style="display: none; margin-top: 20px;">
+                    <div id="reportContent"></div>
+                    <div class="report-actions">
+                        <button class="btn btn-secondary" onclick="copyReport()">📋 Copy Report</button>
+                        <button class="btn btn-secondary" onclick="downloadReport()">⬇️ Download Report</button>
+                    </div>
+                </div>
+
+                <!-- Report Loading -->
+                <div id="reportLoading" class="loading-spinner" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Generating professional report...</p>
+                </div>
+
+                <!-- Report Error -->
+                <div id="reportError" class="error-message" style="display: none;"></div>
+            </div>
+        </section>
+
+        <!-- Live Complaint Heatmap Section -->
+        <section id="heatmap" class="section">
+            <div class="section-header">
+                <h2>🗺️ Live Complaint Heatmap</h2>
+                <p>See complaint hotspots and recent issues on the map</p>
+            </div>
+            <div class="glass-card map-card">
+                <div id="heatmapMap" class="map-canvas"></div>
+                <div id="heatmapStatus" class="error-message" style="display:none;margin-top:12px;"></div>
+            </div>
+        </section>
+
+        <!-- Admin Dashboard Section -->
+        <section id="admin-dashboard" class="section">
+            <div class="section-header">
+                <h2>🧑‍💼 Government Admin Dashboard</h2>
+                <p>Monitor complaint volume and department performance</p>
+            </div>
+            <div class="feature-grid" id="adminDashboardGrid"></div>
+            <div class="chart-card" style="margin-top:16px;"><canvas id="adminChart"></canvas></div>
+            <div class="chart-card" style="margin-top:16px;"><canvas id="departmentChart"></canvas></div>
+            <div class="glass-card" style="margin-top:16px;">
+                <div class="complaint-controls">
+                    <h3 style="margin:0;font-size:1.1rem;">🛠️ Complaint Management</h3>
+                    <button class="btn btn-secondary" onclick="loadAdminComplaints()"
+                        style="font-size:0.9rem;padding:8px 14px;">🔄 Refresh</button>
+                </div>
+                <div class="table-wrapper" style="overflow-x:auto;margin-top:16px;">
+                    <table class="admin-table" style="width:100%;border-collapse:collapse;min-width:900px;">
+                        <thead>
+                            <tr style="border-bottom:2px solid rgba(255,255,255,0.2);">
+                                <th
+                                    style="text-align:left;padding:12px;font-weight:600;font-size:0.85rem;color:var(--text-secondary);">
+                                    ID</th>
+                                <th
+                                    style="text-align:left;padding:12px;font-weight:600;font-size:0.85rem;color:var(--text-secondary);">
+                                    Title</th>
+                                <th
+                                    style="text-align:left;padding:12px;font-weight:600;font-size:0.85rem;color:var(--text-secondary);">
+                                    Issue Type</th>
+                                <th
+                                    style="text-align:left;padding:12px;font-weight:600;font-size:0.85rem;color:var(--text-secondary);">
+                                    Priority</th>
+                                <th
+                                    style="text-align:left;padding:12px;font-weight:600;font-size:0.85rem;color:var(--text-secondary);">
+                                    Department</th>
+                                <th
+                                    style="text-align:left;padding:12px;font-weight:600;font-size:0.85rem;color:var(--text-secondary);">
+                                    Status</th>
+                                <th
+                                    style="text-align:left;padding:12px;font-weight:600;font-size:0.85rem;color:var(--text-secondary);">
+                                    Created</th>
+                                <th
+                                    style="text-align:left;padding:12px;font-weight:600;font-size:0.85rem;color:var(--text-secondary);">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminComplaintsTableBody" style="font-size:0.9rem;">
+                            <tr>
+                                <td colspan="8" style="text-align:center;padding:20px;color:var(--text-secondary);">
+                                    Loading complaints...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics Dashboard Section -->
+        <section id="analytics-dashboard" class="section">
+            <div class="section-header">
+                <h2>📈 Analytics Dashboard</h2>
+                <p>Spot trends in complaints, departments, and resolution speed</p>
+            </div>
+            <div class="feature-grid" id="analyticsGrid"></div>
+            <div class="chart-card" style="margin-top:16px;"><canvas id="monthlyChart"></canvas></div>
+            <div class="chart-card" style="margin-top:16px;"><canvas id="priorityChart"></canvas></div>
+        </section>
+
+        <!-- Civic Predictions Section -->
+        <section id="predictions" class="section">
+            <div class="section-header">
+                <h2>🔮 Civic Predictions</h2>
+                <p>AI-generated hotspots, disease risk, garbage, and flood forecasts</p>
+            </div>
+            <div id="predictionCards" class="feature-grid"></div>
+        </section>
+
+        <!-- Rewards Section -->
+        <section id="rewards" class="section">
+            <div class="section-header">
+                <h2>🏅 Citizen Rewards</h2>
+                <p>Track your engagement points, badges, and leaderboard standing</p>
+            </div>
+            <div id="rewardsPanel" class="feature-grid"></div>
+        </section>
+
+        <!-- Notifications Section -->
+        <section id="notifications" class="section">
+            <div class="section-header">
+                <h2>🔔 Smart Notifications</h2>
+                <p>Recent updates on submitted, updated, resolved, or rejected complaints</p>
+            </div>
+            <div class="glass-card" id="notificationsPanel"></div>
+        </section>
+
+        <!-- Nearby Emergency Services Section -->
+        <section id="services" class="section">
+            <div class="section-header">
+                <h2>🚨 Nearby Emergency Services</h2>
+                <p>Find hospitals, police stations, fire services, and ambulances near you</p>
+            </div>
+
+            <button class="btn btn-primary" onclick="getLocationAndServices()">
+                📍 Find Services Near Me
+            </button>
+
+            <div id="servicesLoading" class="loading-spinner" style="display:none;margin-top:20px;">
+                <div class="spinner"></div>
+                <p>Finding nearby emergency services...</p>
+            </div>
+
+            <div id="mapCard" class="glass-card map-card" style="display:none; margin-top:20px;">
+                <div id="map" class="map-canvas"></div>
+                <div id="mapError" class="error-message" style="display:none;margin-top:12px;"></div>
+            </div>
+
+            <div id="servicesContainer" class="services-grid" style="display: none; margin-top: 20px;">
+                <!-- Services will be populated here -->
+            </div>
+
+            <div id="servicesError" class="error-message" style="display: none;"></div>
+        </section>
+
+        <!-- Emergency Numbers Section -->
+        <section id="help" class="section">
+            <div class="section-header">
+                <h2>☎️ Emergency Contact Numbers</h2>
+                <p>Important emergency numbers for India - Save these in your phone!</p>
+            </div>
+
+            <div id="emergencyNumbers" class="emergency-grid">
+                <!-- Emergency numbers will be populated here -->
+            </div>
+        </section>
+
+        <!-- Complaint History Section -->
+        <section id="history" class="section">
+            <div class="section-header">
+                <h2>📂 My Complaints</h2>
+                <p>View complaints you've submitted</p>
+            </div>
+            <div class="glass-card" id="complaintHistoryCard">
+                <div class="complaint-controls">
+                    <div class="filter-group">
+                        <input id="complaintSearch" type="search"
+                            placeholder="Search by title, issue, status, or department"
+                            oninput="refreshComplaintList()">
+                        <select id="complaintPriorityFilter" onchange="refreshComplaintList()">
+                            <option value="">All Priorities</option>
+                            <option value="Critical">Critical</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                        <select id="complaintStatusFilter" onchange="refreshComplaintList()">
+                            <option value="">All Statuses</option>
+                            <option value="New">New</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                        <select id="complaintDepartmentFilter" onchange="refreshComplaintList()">
+                            <option value="">All Departments</option>
+                            <option value="Municipal Corporation">Municipal Corporation</option>
+                            <option value="Public Works Department">Public Works Department</option>
+                            <option value="Police Department">Police Department</option>
+                            <option value="Electricity Department">Electricity Department</option>
+                            <option value="Water Supply Department">Water Supply Department</option>
+                            <option value="Fire Department">Fire Department</option>
+                            <option value="Health Department">Health Department</option>
+                        </select>
+                        <select id="complaintSort" onchange="refreshComplaintList()">
+                            <option value="newest">Newest</option>
+                            <option value="oldest">Oldest</option>
+                            <option value="priority">Priority (High to Low)</option>
+                            <option value="status">Status</option>
+                        </select>
+                    </div>
+                    <div class="action-group">
+                        <button class="btn btn-secondary" onclick="exportComplaintsCSV()">Export CSV</button>
+                        <button class="btn btn-secondary" onclick="generateComplaintPDF()">Export PDF</button>
+                    </div>
+                </div>
+                <div id="complaintList">You must be logged in to view your complaints.</div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>🛡️ Community Guardian</h4>
+                    <p>Making communities smarter and safer with AI</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#chat">Chat Assistant</a></li>
+                        <li><a href="#analyzer">Report Issue</a></li>
+                        <li><a href="#services">Emergency Help</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Tech Stack</h4>
+                    <p>Python • Flask • Google Gemini AI • HTML5 • CSS3 • JavaScript</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 AI Community Guardian. Built for Hack2Skill Gen AI Hackathon</p>
+                <p>⚡ Powered by Google Gemini AI</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+    <script src="script.js"></script>
+    <!-- Complaint View Modal -->
+    <div id="viewReportModal" class="glass-card"
+        style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2000;display:none;min-width:360px;max-width:90%;width:700px;">
+        <div style="padding:20px;max-height:80vh;overflow-y:auto;position:relative;">
+            <button class="btn btn-secondary" onclick="closeViewReportModal()"
+                style="position:absolute;right:20px;top:20px;">Close</button>
+            <h3 id="viewReportTitle">Report Detail</h3>
+            <div id="viewReportContent" style="margin-top:20px;line-height:1.6;">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
+    </div>
+    <div id="beforeAfterModal" class="glass-card"
+        style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2500;display:none;min-width:360px;max-width:90%;width:700px;">
+        <div style="padding:20px;max-height:80vh;overflow-y:auto;position:relative;">
+            <button class="btn btn-secondary" onclick="closeBeforeAfterModal()"
+                style="position:absolute;right:20px;top:20px;">Close</button>
+            <h3>Before / After Comparison</h3>
+            <input id="afterImageInput" type="file" accept="image/*" style="margin-top:10px;" />
+            <div id="beforeAfterPreview" style="margin-top:12px;"></div>
+            <button class="btn btn-primary" style="margin-top:12px;" onclick="submitAfterImage()">Mark as
+                Resolved</button>
+        </div>
+    </div>
+    <div id="adminComplaintModal" class="glass-card"
+        style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2600;display:none;min-width:360px;max-width:90%;width:720px;max-height:90vh;overflow-y:auto;">
+        <div style="padding:20px;position:relative;">
+            <button class="btn btn-secondary" onclick="closeAdminComplaintModal()"
+                style="position:absolute;right:20px;top:20px;padding:8px 12px;font-size:0.9rem;">✕ Close</button>
+            <h3 id="adminComplaintModalTitle" style="margin-top:0;margin-bottom:20px;">Edit Complaint</h3>
+            <div style="display:grid;gap:12px;">
+                <div>
+                    <label
+                        style="display:block;font-size:0.9rem;color:var(--text-secondary);margin-bottom:6px;">Title</label>
+                    <input id="adminComplaintTitle" placeholder="Complaint title"
+                        style="width:100%;padding:10px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.07);color:white;" />
+                </div>
+                <div>
+                    <label
+                        style="display:block;font-size:0.9rem;color:var(--text-secondary);margin-bottom:6px;">Description</label>
+                    <textarea id="adminComplaintDescription" rows="4" placeholder="Complaint description"
+                        style="width:100%;padding:10px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.07);color:white;font-family:inherit;resize:vertical;"></textarea>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                        <label
+                            style="display:block;font-size:0.9rem;color:var(--text-secondary);margin-bottom:6px;">Priority</label>
+                        <select id="adminComplaintPriority"
+                            style="width:100%;padding:10px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.07);color:white;">
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            style="display:block;font-size:0.9rem;color:var(--text-secondary);margin-bottom:6px;">Status</label>
+                        <select id="adminComplaintStatus"
+                            style="width:100%;padding:10px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.07);color:white;">
+                            <option value="New">New</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label
+                        style="display:block;font-size:0.9rem;color:var(--text-secondary);margin-bottom:6px;">Department</label>
+                    <input id="adminComplaintDepartment" placeholder="Department"
+                        style="width:100%;padding:10px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.07);color:white;" />
+                </div>
+                <div>
+                    <label
+                        style="display:block;font-size:0.9rem;color:var(--text-secondary);margin-bottom:6px;">Resolution
+                        Notes</label>
+                    <textarea id="adminComplaintResolutionNotes" rows="3" placeholder="Add resolution notes here"
+                        style="width:100%;padding:10px;border:1px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.07);color:white;font-family:inherit;resize:vertical;"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="saveAdminComplaint()" style="width:100%;margin-top:10px;">💾
+                    Save Changes</button>
+            </div>
+        </div>
+    </div>
+    <!-- Auth Modal -->
+    <div id="authModal" class="glass-card"
+        style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2000;display:none;min-width:320px;">
+        <div style="padding:20px;">
+            <h3 id="authTitle">Login / Register</h3>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <input id="authUsername" placeholder="Username" />
+                <input id="authPassword" type="password" placeholder="Password" />
+                <div style="display:flex;gap:10px;justify-content:space-between;">
+                    <button class="btn btn-primary" onclick="submitLogin()">Login</button>
+                    <button class="btn btn-secondary" onclick="submitRegister()">Register</button>
+                    <button class="btn" onclick="closeAuthModal()">Close</button>
+                </div>
+                <div id="authError" class="error-message" style="display:none;margin-top:10px;"></div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
